@@ -1,0 +1,32 @@
+name: ASH-004 trusted fixture verification
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Synthetic PR number
+        required: true
+        type: string
+      outcome:
+        description: Deliberate fault injection or verified success
+        required: true
+        type: choice
+        options: [fail, pass]
+permissions: {}
+jobs:
+  verify-synthetic-data:
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - run: node scripts/verify.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_PR: ${{ inputs.pr }}
+          TEST_OUTCOME: ${{ inputs.outcome }}

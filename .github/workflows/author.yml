@@ -1,0 +1,19 @@
+name: ASH-004 bounded fixture author
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  create-synthetic-pr:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - run: node scripts/author.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}

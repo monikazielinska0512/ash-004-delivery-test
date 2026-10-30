@@ -1,0 +1,17 @@
+import {api, requireStatus} from "./api.mjs";
+const branch = "ash-004-fixture-change";
+const base = requireStatus(await api("/git/ref/heads/main"), 200).object.sha;
+const existing = await api("/git/ref/heads/" + branch);
+if (existing.status !== 404) throw Error("RECONCILE_EXISTING_BRANCH_BEFORE_RETRY");
+const original = requireStatus(await api("/contents/index.html?ref=" + base), 200);
+const a = Buffer.from(original.content, "base64").toString("utf8");
+if (!a.includes("Wersja A")) throw Error("UNEXPECTED_FIXTURE");
+const c = a.replace("test A", "test C").replace("Wersja A", "Wersja C");
+requireStatus(await api("/git/refs", "POST", {ref: "refs/heads/" + branch, sha: base}), 201);
+const changed = requireStatus(await api("/contents/index.html", "PUT", {message: "ASH-004 synthetic marker A to C", branch, sha: original.sha, content: Buffer.from(c).toString("base64")}), 200);
+const pr = requireStatus(await api("/pulls", "POST", {title: "[ASH-004 TEST] Change only synthetic page marker A to C", head: branch, base: "main", body: "Disposable protected-delivery experiment. Only index.html changes from synthetic marker A to C. No platform code, secrets, dependency or executable workflow change. Human review is required."}), 201);
+if (pr.user.login !== "github-actions[bot]") throw Error("AUTHOR_IDENTITY_UNEXPECTED");
+const self = await api("/pulls/" + pr.number + "/reviews", "POST", {event: "APPROVE", body: "ASH-004 negative test: author self-approval must be rejected."});
+const forge = await api("/check-runs", "POST", {name: "ash004-required", head_sha: changed.commit.sha, status: "completed", conclusion: "success", output: {title: "ASH-004 author capability negative test", summary: "This check creation must be rejected for the author job token."}});
+console.log(JSON.stringify({pr: pr.number, url: pr.html_url, author: pr.user.login, head: changed.commit.sha, selfApprovalStatus: self.status, selfApprovalRejected: self.status === 422, authorCheckWriteStatus: forge.status, authorCheckWriteDenied: forge.status === 403}));
+if (self.status !== 422 || forge.status !== 403) process.exitCode = 1;
