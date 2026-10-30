@@ -11,7 +11,7 @@ globalThis.fetch=async (url,options={})=>{
   const path=url.split(process.env.GITHUB_REPOSITORY)[1];let data;
   if(path==='/pulls/1')data={number:1,user:{login:'github-actions[bot]'},base:{ref:'main',sha:a},head:{sha:b,repo:{full_name:process.env.GITHUB_REPOSITORY}}};
   else if(path==='/pulls/1/files?per_page=100')data=[{filename:wrongPath?'.github/workflows/verify.yml':'index.html'}];
-  else if(path.startsWith('/contents/index.html?ref='))data={content:Buffer.from(path.endsWith(a)?source:source.replace('test A','test C').replace('Wersja A','Wersja C')).toString('base64')};
+  else if(path.startsWith('/contents/index.html?ref='))data={content:Buffer.from(path.endsWith(a)?source:source.replace('test C','test D').replace('Wersja C','Wersja D')).toString('base64')};
   else if(path.startsWith('/commits/'))data={check_runs:[]};
   else if(path==='/check-runs'&&options.method==='POST'){const body=JSON.parse(options.body);writes.push(body);data={...body,id:7,app:{id:15368,slug:'github-actions'}};return new Response(JSON.stringify(data),{status:201});}
   else throw Error('Unexpected API call');

@@ -7,10 +7,10 @@ const files = requireStatus(await api("/pulls/" + number + "/files?per_page=100"
 if (files.length !== 1 || files[0].filename !== "index.html") throw Error("UNTRUSTED_CHANGED_PATH");
 const get = async sha => Buffer.from(requireStatus(await api("/contents/index.html?ref=" + sha), 200).content, "base64").toString("utf8");
 const base = await get(pr.base.sha), head = await get(pr.head.sha);
-const verified = base.includes("Wersja A") && head === base.replace("test A", "test C").replace("Wersja A", "Wersja C");
+const verified = base.includes("Wersja C") && head === base.replace("test C", "test D").replace("Wersja C", "Wersja D");
 const conclusion = verified && outcome === "pass" ? "success" : "failure";
 const prior = requireStatus(await api("/commits/" + pr.head.sha + "/check-runs?check_name=ash004-required"), 200).check_runs.filter(r => r.name === "ash004-required" && r.app.slug === "github-actions").sort((a,b)=>b.id-a.id)[0];
-const body = {name: "ash004-required", head_sha: pr.head.sha, status: "completed", conclusion, output: {title: outcome === "fail" ? "Intentional ASH-004 fault injection" : "Synthetic immutable fixture verified", summary: "Only a static A-to-C marker change is permitted. Verification used trusted base workflow code; PR code was fetched as data and never executed. Requested test outcome: " + outcome}};
+const body = {name: "ash004-required", head_sha: pr.head.sha, status: "completed", conclusion, output: {title: outcome === "fail" ? "Intentional ASH-004 fault injection" : "Synthetic immutable fixture verified", summary: "Only a static C-to-D negative-control marker change is permitted. Verification used trusted base workflow code; PR code was fetched as data and never executed. Requested test outcome: " + outcome}};
 const check = prior ? requireStatus(await api("/check-runs/" + prior.id, "PATCH", body), 200) : requireStatus(await api("/check-runs", "POST", body), 201);
 console.log(JSON.stringify({pr: pr.number, head: pr.head.sha, fixtureVerified: verified, checkId: check.id, checkName: check.name, appId: check.app.id, appSlug: check.app.slug, conclusion: check.conclusion, forcedFailure: outcome === "fail"}));
 if (conclusion !== "success") process.exitCode = 1;
